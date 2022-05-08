@@ -1,10 +1,9 @@
 # Introduction<a name="introduction"></a>
-```regressor```
-This is a Gpytorch based Bayesian optimization project. ```acquisition.py``` contains the acquisition functions that need to be used, currently there is only one EI function. ```Bo.py```contains the Bayesian optimization trainer class, which can generate and train the specified Gaussian process regression model as well as train the Bayesian optimization process. ```GP.py``` Gaussian process models, we currently only use the ExactGP model. ```Test_funtions.py``` contains test functions, here we use the **Hartmann -6D function**. All of these classes and functions are reusable, maintainable and extensible.
+This is a Gpytorch based Bayesian optimization project. ```acquisition.py``` contains the acquisition functions that need to be used, currently there is only one EI function. ```Bo.py```contains the Bayesian optimization trainer class, which can generate and train the specified Gaussian process regression model as well as train the Bayesian optimization process. ```GP.py``` are Gaussian process models, we currently only use the ExactGP model. ```Test_funtions.py``` contains test functions, here we only use the **Hartmann -6D function**. All of these classes and functions are reusable, maintainable and extensible.
 
 ## An example of how to run<a name="example"></a>
 This example is in the ```test.py```.<br>
-Before ww start training, please run the following code first to configure the environment 
+Before we start training, please run the following code first to configure the environment 
 ```python
 pip install -r requirements.txt
 ```
@@ -29,7 +28,7 @@ The next step is to choose an appropriate acquisition function
 from acquisition import EI
 acq = EI()
 ```
-Finally, the training function of the BO trainer is used to Bayesian optimize the test function.
+Finally, the training function of the BO trainer is used to optimize the test function.
 ```python
 from Bo import BO_Trainer
 trainer = BO_Trainer(test_function,  acq, likelihood, model_name)
