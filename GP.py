@@ -45,13 +45,14 @@ class ModelFactory:
         else:
             raise TypeError("No such model %s" % name)
     def get_output(self, X, model, return_std=True):
-
+        model.eval()
+        model.likelihood.eval()
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X)
 
-
-        pred_y = model.forward(X.cuda())
-        # pred_y = model.likelihood(pred_y)
+        with torch.no_grad():
+            pred_y = model(X.cuda())
+        #pred_y = model.likelihood(pred)
         mu = pred_y.mean.detach().cpu().numpy()
         std = np.sqrt(pred_y.variance.detach().cpu().numpy())
         if return_std:

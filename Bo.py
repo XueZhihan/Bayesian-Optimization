@@ -28,15 +28,18 @@ class BO_Trainer():
     def acquisition(self):
         return self._acquisition
 
-    def generate_model(self, X_sample, Y_sample):
+    def generate_model(self, X_sample, Y_sample, gpr):
 
         mf = ModelFactory()
-        self.gp_model = mf.creat_model(self.model_name, X_sample, Y_sample, self.likelihood).cuda()
+        if gpr:
+            self.gp_model = gpr
+        else:
+            self.gp_model = mf.creat_model(self.model_name, X_sample, Y_sample, self.likelihood).cuda()
         training_iter = 50
 
         # Find optimal model hyperparameters
         self.gp_model.train()
-        self.likelihood.train()
+        self.gp_model.likelihood.train()
 
         # Use the adam optimizer
         optimizer = torch.optim.Adam(self.gp_model.parameters(), lr=0.01)  # Includes GaussianLikelihood parameters
@@ -56,7 +59,7 @@ class BO_Trainer():
             optimizer.step()
         return self.gp_model
 
-    def train(self, test_function, experiments, n_iter, verbose=False):
+    def train(self, test_function, experiments, n_iter, noises, noise_or_not=True, verbose= True):
         Error_gaps_list = []
 
         for i in range(experiments):
@@ -72,20 +75,25 @@ class BO_Trainer():
             Y_sample = train_y
 
             Error_gaps = []
+            gpr = None
 
             for j in range(n_iter):
                 # Update Gaussian process with existing samples
-                gpr = self.generate_model(train_x, train_y)
-
+                gpr = self.generate_model(X_sample, Y_sample, gpr)
                 # Obtain next sampling point from the acquisition function (expected_improvement)
                 X_next = self.acquisition.next_sample(X_sample, Y_sample, gpr, self.test_function.get_bounds())
 
                 # Obtain next noisy sample from the objective function
-                Y_next = torch.tensor(self.test_function.output(X_next))
-
+                Y_next = torch.tensor(self.test_function.output(X_next)).cuda()
+                X_next = torch.tensor(X_next).cuda()
+                if noise_or_not:
+                    new_noise = noises[0].unsqueeze(0).cuda()
+                    gpr = gpr.get_fantasy_model(X_next, Y_next, **{"noise": new_noise}).cuda()
+                else:
+                    gpr = gpr.get_fantasy_model(X_next, Y_next).cuda()
                 # Add sample to previous samples
-                X_sample = torch.tensor(np.vstack((X_sample.cpu(), X_next)))
-                Y_sample = torch.tensor(np.concatenate((Y_sample.cpu(), Y_next)))
+                X_sample = torch.tensor(np.vstack((X_sample.cpu(), X_next.cpu()))).cuda()
+                Y_sample = torch.tensor(np.concatenate((Y_sample.cpu(), Y_next.cpu()))).cuda()
                 min_f_star = self.test_function.get_global_minimum()
                 Error_gaps.append(np.abs(min_f_star - min(Y_sample).item()))
                 if verbose:
@@ -112,7 +120,7 @@ def plot(gaps, n_iter, experiment):
     error_gap_f = np.asarray(gaps)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    ax.errorbar(iters, error_gap_f.mean(axis=0), yerr=ci(error_gap_f), label="FixedNoiseGaussianLikelihood", linewidth=1.5)
+    ax.errorbar(iters, error_gap_f.mean(axis=0), yerr=ci(error_gap_f), label="BO", linewidth=1.5)
 
     ax.set_ylim(bottom=-0.1)
     ax.set(xlabel='number of observations (beyond initial points)', ylabel='error gap')

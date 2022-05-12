@@ -18,8 +18,7 @@ Then we need to choose our GP model and Likelihood.
 import gpytorch
 import torch
 model_name = "ExactGP"
-noises = torch.ones(20) * 0.01
-likelihood = gpytorch.likelihoods.FixedNoiseGaussianLikelihood(noise=noises, learn_additional_noise=True).cuda()
+likelihood = gpytorch.likelihoods.GaussianLikelihood()
 ```
 Here we do not instantiate the GP model because each iteration of the experiment creates a new model. To control the instantiation and prediction capabilities of GP models during BO training, we wrote a **ModelFactory** Class in ```GP.py.```<br>
 <br>
@@ -32,7 +31,7 @@ Finally, the training function of the BO trainer is used to optimize the test fu
 ```python
 from Bo import BO_Trainer
 trainer = BO_Trainer(test_function,  acq, likelihood, model_name)
-trainer.train(test_function, 10, 200)
+trainer.train(test_function, 10, 200, noises, noise_or_not=False)
 ```
 The whole running process code is as follows
 ```python
@@ -46,9 +45,9 @@ test_function = Hartmann6D()
 model_name = "ExactGP"
 acq = EI()
 noises = torch.ones(20) * 0.01
-likelihood = gpytorch.likelihoods.FixedNoiseGaussianLikelihood(noise=noises, learn_additional_noise=True).cuda()
+likelihood = gpytorch.likelihoods.GaussianLikelihood()
 trainer = BO_Trainer(test_function,  acq, likelihood, model_name)
-trainer.train(test_function, 10, 200)
+trainer.train(test_function, 10, 200, noises, noise_or_not=False)
 ```
 
 ## Results<a name="result"></a>

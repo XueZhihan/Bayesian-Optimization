@@ -6,7 +6,8 @@ import gpytorch
 import torch
 import numpy as np
 from matplotlib import pyplot as plt
-
+import os
+smoke_test = ('CI' in os.environ)
 
 
 
@@ -19,9 +20,10 @@ if __name__ == '__main__':
         model_name = "ExactGP"
         acq = EI()
         noises = torch.ones(20) * 0.01
-        likelihood = gpytorch.likelihoods.FixedNoiseGaussianLikelihood(noise=noises, learn_additional_noise=True).cuda()
+        likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        #likelihood = gpytorch.likelihoods.FixedNoiseGaussianLikelihood(noise=noises, learn_additional_noise=True).cuda()
         trainer = BO_Trainer(test_function,  acq, likelihood, model_name)
-        trainer.train(test_function, 10, 200)
+        trainer.train(test_function, 10, 200, noises, noise_or_not=False)
 
 
 
